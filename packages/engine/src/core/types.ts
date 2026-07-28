@@ -1,5 +1,5 @@
 import type { Seconds, Unit } from './units';
-import type { Modulators } from './modulation';
+import type { DrugEffect, Modulators } from './modulation';
 import type { OrganismSignals } from './signals';
 
 /**
@@ -78,6 +78,22 @@ export interface OrganismBus {
   readonly signals: Readonly<OrganismSignals>;
   /** Multiplicative factors of all active interventions; 1 means untouched. */
   readonly mod: Modulators;
+}
+
+/**
+ * Something the user can do to the body: give a drug, switch on a pathology, start an
+ * event. Drugs act through the shared modulation sites; pathologies act inside the system
+ * that owns them and describe where in `actsOn` (see interventions/).
+ */
+export interface Intervention {
+  readonly id: string;
+  /** German label. */
+  readonly label: string;
+  readonly kind: 'drug' | 'pathology' | 'event';
+  readonly effects: readonly DrugEffect[];
+  readonly contentId?: string;
+  /** Source for the effect sizes, or an explicit note that they are didactic settings. */
+  readonly source: string;
 }
 
 /**

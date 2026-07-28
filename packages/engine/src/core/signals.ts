@@ -40,10 +40,24 @@ export interface OrganismSignals {
   sympatheticTone: number;
   /** Plasma renin activity [ng/mL/h]. */
   plasmaReninActivity: number;
+  /** Renin release from both kidneys, 1 = resting rate. Published by the renal module. */
+  reninSecretionRelative: number;
   angiotensinIiNgPerL: number;
+  /**
+   * Effective AT1 signal, 1 = resting. This is concentration times receptor availability:
+   * an AT1 blocker lowers it while raising the concentration, which is exactly what
+   * happens in a patient and what the readouts should show.
+   */
+  angiotensinIiEffect: number;
   aldosteroneNgPerL: number;
+  /** Aldosterone effect at the target cell — lags the concentration by ~1.5 h (genomic). */
+  aldosteroneActionNgPerL: number;
   adhNgPerL: number;
+  /** Collecting duct water permeability, 1 = resting. ADH times V2/AQP2 availability. */
+  adhWaterPermeability: number;
   anpNgPerL: number;
+  /** ANP relative to rest, 1 = resting. */
+  anpRelative: number;
 
   // --- renal ---------------------------------------------------------------
   /** Sum of both kidneys [mL/min]. */
@@ -86,10 +100,15 @@ export const RESTING_SIGNALS: Readonly<OrganismSignals> = Object.freeze({
 
   sympatheticTone: 1,
   plasmaReninActivity: 1.0,
+  reninSecretionRelative: 1,
   angiotensinIiNgPerL: 15,
+  angiotensinIiEffect: 1,
   aldosteroneNgPerL: 80,
+  aldosteroneActionNgPerL: 80,
   adhNgPerL: 2,
+  adhWaterPermeability: 1,
   anpNgPerL: 20,
+  anpRelative: 1,
 
   gfrMlPerMin: 125,
   renalBloodFlowMlPerMin: 1100,

@@ -50,10 +50,15 @@ export function nonNegative(value: number): number {
 /**
  * First-order relaxation towards `target` with time constant `tau` (seconds).
  * The workhorse of every hormone pool and every reflex in this model.
+ *
+ * Uses the exact solution of dx/dt = (target - x)/tau over one step instead of an Euler
+ * increment. That makes the step unconditionally stable: a baroreflex with tau = 10 s stays
+ * correct even when the time-lapse mode advances the model in steps far larger than tau,
+ * where explicit integration would oscillate or blow up (see docs/adr/0002).
  */
 export function relax(current: number, target: number, tau: Seconds, dt: Seconds): number {
-  if (tau <= 0) return target;
-  return current + ((target - current) * dt) / tau;
+  if (tau <= 0 || dt <= 0) return dt <= 0 ? current : target;
+  return target + (current - target) * Math.exp(-dt / tau);
 }
 
 /**
@@ -62,6 +67,18 @@ export function relax(current: number, target: number, tau: Seconds, dt: Seconds
  */
 export function sigmoid(x: number, x50: number, steepness: number): number {
   return 1 / (1 + Math.exp(-steepness * (x - x50)));
+}
+
+/**
+ * Saturating response to a normalised signal (1 = resting).
+ *
+ * A purely linear gain makes a hormone that triples its concentration triple its effect,
+ * which no receptor system does. This keeps the response linear for small deviations and
+ * flattens it for large ones, in both directions.
+ */
+export function respond(relativeSignal: number, gain: number, saturation = 0.5): number {
+  const deviation = relativeSignal - 1;
+  return 1 + (gain * deviation) / (1 + saturation * Math.abs(deviation));
 }
 
 /** Linear interpolation, `t` clamped to [0, 1]. */
