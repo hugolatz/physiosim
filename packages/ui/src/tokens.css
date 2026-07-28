@@ -1,0 +1,69 @@
+/*
+ * PhysioSim design tokens.
+ *
+ * Palette rationale: warm paper and ink, not dashboard grey. Two "fluid" hues
+ * (arterial red, venous indigo) plus filtrate teal and a saffron used for
+ * hormonal/signalling paths and event markers.
+ *
+ * Deuteranopia: arterial and saffron separate by lightness (L* ~44 vs ~70);
+ * indigo and teal are the closest pair, so they are never used as opposing
+ * categories on the same axis. Colour is always redundant with shape, label
+ * and number — see docs/adr and the accessibility notes in CONTRIBUTING.md.
+ */
+
+@theme {
+  /* base */
+  --color-ink: #141a21;
+  --color-ink-muted: #4a545f;
+  --color-ink-faint: #8b939c;
+  --color-paper: #f4f1ea;
+  --color-paper-raised: #fbf9f5;
+  --color-rule: #ded8cc;
+
+  /* semantic physiology colours */
+  --color-arterial: #b5352a;
+  --color-venous: #2b5d8c;
+  --color-filtrate: #17857b;
+  --color-signal: #d9a21b;
+
+  /* tints for fills */
+  --color-arterial-tint: #f0d9d6;
+  --color-venous-tint: #d6e0ea;
+  --color-filtrate-tint: #d1e7e5;
+  --color-signal-tint: #f5e7c4;
+
+  /* typography */
+  --font-serif: var(--font-source-serif), Georgia, 'Times New Roman', serif;
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+
+  /* motion — parameter changes settle over ~300 ms so causality stays visible */
+  --duration-settle: 300ms;
+  --ease-settle: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-ink: #e8e4db;
+    --color-ink-muted: #a7aeb6;
+    --color-ink-faint: #6d757e;
+    --color-paper: #14181d;
+    --color-paper-raised: #1c2127;
+    --color-rule: #2c333b;
+
+    --color-arterial: #e2604f;
+    --color-venous: #6ea3d6;
+    --color-filtrate: #3fb3a6;
+    --color-signal: #e8bc4e;
+
+    --color-arterial-tint: #3a2320;
+    --color-venous-tint: #1d2c3a;
+    --color-filtrate-tint: #16302e;
+    --color-signal-tint: #362c15;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-settle: 0ms;
+  }
+}

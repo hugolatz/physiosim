@@ -1,0 +1,8 @@
+# Standard: alles beim Projektinhaber
+*                       @hugolatz
+
+# Der Simulationskern und die Modelldokumentation sind der empfindlichste Teil:
+# Änderungen hier verändern jede Zahl, jede Kurve und jede Animation der App.
+/packages/engine/       @hugolatz
+/docs/model/            @hugolatz
+/docs/adr/              @hugolatz

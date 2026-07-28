@@ -1,0 +1,18 @@
+Lerninhalte von PhysioSim
+=========================
+
+Alle Dateien unter apps/web/content sowie die Modelldokumentation unter docs/model
+stehen unter der Lizenz
+
+    Creative Commons Namensnennung – Weitergabe unter gleichen Bedingungen 4.0
+    International (CC BY-SA 4.0)
+
+Lizenztext: https://creativecommons.org/licenses/by-sa/4.0/deed.de
+
+Namensnennung: "PhysioSim (Hugo Latz), CC BY-SA 4.0"
+
+Der Quellcode des Projekts steht getrennt davon unter der MIT-Lizenz, siehe LICENSE.
+
+Hinweis zu zitierten Quellen: In den Inhalten werden Lehrbuecher und Publikationen als
+Belege *referenziert*. Das begruendet keine Lizenz an deren Inhalten; Abbildungen oder
+Textpassagen aus diesen Werken duerfen nicht uebernommen werden.

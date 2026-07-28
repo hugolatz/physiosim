@@ -1,0 +1,29 @@
+# dependencies
+node_modules/
+.npm/
+
+# build output
+.next/
+out/
+dist/
+*.tsbuildinfo
+
+# test / coverage
+coverage/
+playwright-report/
+test-results/
+
+# env
+.env
+.env.local
+.env.*.local
+
+# editor / os
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# deployment
+.netlify/
+.vercel/

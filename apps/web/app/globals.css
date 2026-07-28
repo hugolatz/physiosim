@@ -1,0 +1,24 @@
+@import 'tailwindcss';
+@import '@physiosim/ui/tokens.css';
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Readings must never jitter while the simulation runs. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
+}
