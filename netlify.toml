@@ -5,7 +5,7 @@
   publish = "apps/web/out"
 
 [build.environment]
-  NODE_VERSION = "20"
+  NODE_VERSION = "22"
 
 # ── Security headers (gelten fuer alle Routen inkl. statischer Assets) ────────
 [[headers]]

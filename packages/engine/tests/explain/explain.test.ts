@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createSimulation, explain, renalConstants, type ExplainContext } from '../../src/index';
 import type { CardiovascularState, RenalState, Simulation } from '../../src/index';
 import { DAY, HOUR, MINUTE } from '../../src/core/units';
+import { advanceChunked } from '../helpers';
 
 /**
  * The "Warum?" panel has to name the cause a physiologist would name. These tests are the
@@ -23,7 +24,7 @@ function topStep(sim: Simulation, target: Parameters<typeof explain>[0]) {
 }
 
 describe('Warum?-Erklärung', () => {
-  it('nennt im Ruhezustand keine treibende Ursache', () => {
+  it('nennt im Ruhezustand keine treibende Ursache', async () => {
     const sim = createSimulation();
     sim.advance(6 * HOUR);
     const result = explain('map', ctxOf(sim));
@@ -32,9 +33,9 @@ describe('Warum?-Erklärung', () => {
     expect(result.steps.every((s) => s.weight < 0.1)).toBe(true);
   });
 
-  it('führt den GFR-Einbruch unter ACE-Hemmer auf das Vas efferens zurück', () => {
+  it('führt den GFR-Einbruch unter ACE-Hemmer auf das Vas efferens zurück', async () => {
     const sim = createSimulation({ renalArteryStenosisLeft: 30, renalArteryStenosisRight: 30 });
-    sim.advance(3 * DAY);
+    await advanceChunked(sim, 3 * DAY);
     const before = explain('gfr-left', ctxOf(sim));
     // Behind a stenosis the kidney leans on angiotensin II to hold its capillary pressure.
     expect(before.steps.find((s) => s.id === 'eff-angiotensin')?.direction).toBe('up');
@@ -54,9 +55,9 @@ describe('Warum?-Erklärung', () => {
     expect(efferent!.direction).toBe('down');
   });
 
-  it('zeigt, dass der Renin-Rebound das AT1-Signal über Stunden teilweise zurückholt', () => {
+  it('zeigt, dass der Renin-Rebound das AT1-Signal über Stunden teilweise zurückholt', async () => {
     const sim = createSimulation({ renalArteryStenosisLeft: 30, renalArteryStenosisRight: 30 });
-    sim.advance(3 * DAY);
+    await advanceChunked(sim, 3 * DAY);
     sim.setParams({
       renalArteryStenosisLeft: 30,
       renalArteryStenosisRight: 30,
@@ -73,9 +74,9 @@ describe('Warum?-Erklärung', () => {
     expect(sim.value('gfr')).toBeLessThan(renalConstants.GFR_ML_PER_MIN * 0.85);
   });
 
-  it('führt die Reninsuppression bei Conn auf Druck und Macula densa zurück, nicht auf den Sympathikus', () => {
+  it('führt die Reninsuppression bei Conn auf Druck und Macula densa zurück, nicht auf den Sympathikus', async () => {
     const sim = createSimulation({ primaryAldosteronism: 100 });
-    sim.advance(14 * DAY);
+    await advanceChunked(sim, 14 * DAY);
 
     const result = explain('renin', ctxOf(sim));
     expect(result.direction).toBe('down');
@@ -84,7 +85,7 @@ describe('Warum?-Erklärung', () => {
     expect(['renin-pressure', 'renin-md', 'renin-feedback']).toContain(top!.id);
   });
 
-  it('nennt beim Schleifendiuretikum den NKCC2-Block als Ursache der Natriurese', () => {
+  it('nennt beim Schleifendiuretikum den NKCC2-Block als Ursache der Natriurese', async () => {
     const sim = createSimulation();
     sim.advance(DAY);
     sim.setParams({ loopDiuretic: 100 });
@@ -97,7 +98,7 @@ describe('Warum?-Erklärung', () => {
     expect(result.steps.indexOf(loop!)).toBe(0);
   });
 
-  it('erklärt die Polyurie bei Diabetes insipidus über die Wasserdurchlässigkeit', () => {
+  it('erklärt die Polyurie bei Diabetes insipidus über die Wasserdurchlässigkeit', async () => {
     const sim = createSimulation({ diabetesInsipidus: 100 });
     sim.advance(6 * HOUR);
 
@@ -108,16 +109,16 @@ describe('Warum?-Erklärung', () => {
     expect(adh!.direction).toBe('up');
   });
 
-  it('erklärt die Hypokaliämie bei Conn über das Aldosteron', () => {
+  it('erklärt die Hypokaliämie bei Conn über das Aldosteron', async () => {
     const sim = createSimulation({ primaryAldosteronism: 100 });
-    sim.advance(14 * DAY);
+    await advanceChunked(sim, 14 * DAY);
 
     const result = explain('plasmaPotassium', ctxOf(sim));
     expect(result.direction).toBe('down');
     expect(result.steps[0]?.id).toBe('aldosterone');
   });
 
-  it('zitiert Faktoren, die das Modell tatsächlich verwendet hat', () => {
+  it('zitiert Faktoren, die das Modell tatsächlich verwendet hat', async () => {
     const sim = createSimulation();
     sim.advance(DAY);
     sim.setParams({ loopDiuretic: 100 });
@@ -133,9 +134,9 @@ describe('Warum?-Erklärung', () => {
     );
   });
 
-  it('lässt sich für jedes Ziel ohne Fehler aufrufen', () => {
+  it('lässt sich für jedes Ziel ohne Fehler aufrufen', async () => {
     const sim = createSimulation({ loopDiuretic: 60, aceInhibitor: 40, sodiumIntake: 300 });
-    sim.advance(2 * DAY);
+    await advanceChunked(sim, 2 * DAY);
     const ctx = ctxOf(sim);
     for (const target of [
       'map',

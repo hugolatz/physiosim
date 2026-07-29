@@ -6,6 +6,7 @@ export default defineConfig({
     environment: 'node',
     // Scenario tests integrate up to 30 simulated days.
     testTimeout: 120_000,
+    hookTimeout: 120_000,
     include: ['tests/**/*.test.ts'],
     coverage: {
       provider: 'v8',

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createSimulation, SCENARIOS, SOLVER_DT } from '../../src/index';
 import { DAY, HOUR } from '../../src/core/units';
-import { values } from '../helpers';
+import { advanceChunked, values } from '../helpers';
 
 /**
  * Invariants: things that must hold no matter what the user does. A scenario test says
@@ -9,11 +9,11 @@ import { values } from '../helpers';
  */
 
 describe('Determinismus', () => {
-  it('liefert bei gleichen Parametern exakt dasselbe Ergebnis', () => {
+  it('liefert bei gleichen Parametern exakt dasselbe Ergebnis', async () => {
     const a = createSimulation({ sodiumIntake: 250, loopDiuretic: 40 });
     const b = createSimulation({ sodiumIntake: 250, loopDiuretic: 40 });
-    a.advance(3 * DAY);
-    b.advance(3 * DAY);
+    await advanceChunked(a, 3 * DAY);
+    await advanceChunked(b, 3 * DAY);
     expect(values(a)).toEqual(values(b));
   });
 
@@ -46,26 +46,26 @@ describe('Determinismus', () => {
 });
 
 describe('Massenerhaltung', () => {
-  it('bilanziert Natrium über 7 Tage', () => {
+  it('bilanziert Natrium über 7 Tage', async () => {
     // Steady state at the default intake: what goes in must come out.
     const sim = createSimulation();
-    sim.advance(7 * DAY);
+    await advanceChunked(sim, 7 * DAY);
     const v = values(sim);
     expect(v['sodiumExcretion']!).toBeGreaterThan(140);
     expect(v['sodiumExcretion']!).toBeLessThan(160);
   });
 
-  it('bilanziert Kalium über 7 Tage', () => {
+  it('bilanziert Kalium über 7 Tage', async () => {
     const sim = createSimulation();
-    sim.advance(7 * DAY);
+    await advanceChunked(sim, 7 * DAY);
     const v = values(sim);
     expect(v['potassiumExcretion']!).toBeGreaterThan(64);
     expect(v['potassiumExcretion']!).toBeLessThan(76);
   });
 
-  it('bilanziert Wasser: Zufuhr minus Verluste ergibt die Urinmenge', () => {
+  it('bilanziert Wasser: Zufuhr minus Verluste ergibt die Urinmenge', async () => {
     const sim = createSimulation();
-    sim.advance(7 * DAY);
+    await advanceChunked(sim, 7 * DAY);
     const v = values(sim);
     // intake total − insensible (0.9) − stool (0.15) = urine, at steady state
     expect(v['urineFlow']!).toBeCloseTo(v['waterIntake']! - 1.05, 1);
@@ -102,9 +102,9 @@ describe('Keine unphysiologischen Werte', () => {
     { vascularTone: 1.8, baroreflexEnabled: 0 },
   ];
 
-  it.each(stressTests)('bleibt endlich und nichtnegativ: %o', (params) => {
+  it.each(stressTests)('bleibt endlich und nichtnegativ: %o', async (params) => {
     const sim = createSimulation(params);
-    sim.advance(7 * DAY);
+    await advanceChunked(sim, 7 * DAY);
     for (const readout of sim.readouts()) {
       expect(Number.isFinite(readout.value), `${readout.id} ist nicht endlich`).toBe(true);
     }
@@ -149,9 +149,9 @@ describe('Keine unphysiologischen Werte', () => {
   it.each([
     { params: { diabetesInsipidus: 100, thirstEnabled: 0 }, direction: 'up' as const },
     { params: { siadh: 100, waterIntake: 6 }, direction: 'down' as const },
-  ])('bleibt bei letalen Extremen endlich: %o', ({ params, direction }) => {
+  ])('bleibt bei letalen Extremen endlich: %o', async ({ params, direction }) => {
     const sim = createSimulation(params);
-    sim.advance(7 * DAY);
+    await advanceChunked(sim, 7 * DAY);
     for (const readout of sim.readouts()) {
       expect(Number.isFinite(readout.value), `${readout.id}`).toBe(true);
     }
@@ -163,26 +163,26 @@ describe('Keine unphysiologischen Werte', () => {
 });
 
 describe('Numerische Stabilität', () => {
-  it('bleibt über 30 simulierte Tage stabil', () => {
+  it('bleibt über 30 simulierte Tage stabil', async () => {
     const sim = createSimulation({ sodiumIntake: 300 });
-    sim.advance(30 * DAY);
+    await advanceChunked(sim, 30 * DAY);
     const v = values(sim);
     expect(Number.isFinite(v['map']!)).toBe(true);
     expect(v['map']!).toBeGreaterThan(50);
     expect(v['map']!).toBeLessThan(180);
     // And it really is a steady state: another day changes almost nothing.
     const before = v['map']!;
-    sim.advance(DAY);
+    await advanceChunked(sim, DAY);
     expect(Math.abs(values(sim)['map']! - before)).toBeLessThan(1.5);
   });
 
-  it('bleibt auch mit maximaler Störung über 30 Tage endlich', () => {
+  it('bleibt auch mit maximaler Störung über 30 Tage endlich', async () => {
     const sim = createSimulation({
       primaryAldosteronism: 100,
       sodiumIntake: 600,
       heartFailure: 60,
     });
-    sim.advance(30 * DAY);
+    await advanceChunked(sim, 30 * DAY);
     for (const readout of sim.readouts()) {
       expect(Number.isFinite(readout.value), `${readout.id}`).toBe(true);
     }
@@ -199,10 +199,10 @@ describe('Numerische Stabilität', () => {
 });
 
 describe('Szenarienkatalog', () => {
-  it('lässt sich vollständig ausführen', () => {
+  it('lässt sich vollständig ausführen', async () => {
     for (const scenario of SCENARIOS) {
       const sim = createSimulation(scenario.params);
-      sim.advance(Math.min(scenario.settleSeconds, 3 * DAY));
+      await advanceChunked(sim, Math.min(scenario.settleSeconds, 3 * DAY));
       for (const id of scenario.focus) {
         expect(() => sim.readout(id), `${scenario.id}: ${id}`).not.toThrow();
       }

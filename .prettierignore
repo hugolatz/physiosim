@@ -6,3 +6,6 @@ coverage/
 package-lock.json
 *.tsbuildinfo
 apps/web/next-env.d.ts
+
+# erzeugte Datei — scripts/check-content.mjs vergleicht sie Byte fuer Byte
+apps/web/content/registry.generated.ts

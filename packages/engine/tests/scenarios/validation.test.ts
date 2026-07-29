@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { DAY, HOUR, MINUTE } from '../../src/core/units';
-import { change, settled, values } from '../helpers';
+import { advanceChunked, change, settled, values } from '../helpers';
 
 /**
  * The teaching scenarios as acceptance tests.
@@ -9,18 +9,28 @@ import { change, settled, values } from '../helpers';
  * didactic simplification and pinning it to three decimal places would only make the suite
  * brittle. A red test here is a statement about physiology, not about code style.
  * The prose version of each expectation lives in docs/model/validation.md.
+ *
+ * The heavy lifting happens in `beforeAll` rather than in the describe body: running weeks
+ * of model time during collection blocks Vitest's worker so long that its reporter times
+ * out (see tests/helpers.ts).
  */
 
-describe('1 — Akuter Blutverlust 1000 mL', () => {
-  const base = settled();
-  const before = values(base);
+type Values = Record<string, number>;
 
-  const sim = settled();
-  sim.setParams({ hemorrhageRate: 100 }); // 100 mL/min
-  sim.advance(10 * MINUTE); // = 1000 mL
-  sim.setParams({ hemorrhageRate: 0 });
-  sim.advance(20 * MINUTE);
-  const after = values(sim);
+describe('1 — Akuter Blutverlust 1000 mL', () => {
+  let before: Values;
+  let after: Values;
+
+  beforeAll(async () => {
+    before = values(await settled());
+
+    const sim = await settled();
+    sim.setParams({ hemorrhageRate: 100 }); // 100 mL/min
+    await advanceChunked(sim, 10 * MINUTE); // = 1000 mL
+    sim.setParams({ hemorrhageRate: 0 });
+    await advanceChunked(sim, 20 * MINUTE);
+    after = values(sim);
+  });
 
   it('senkt den Blutdruck, aber abgefedert', () => {
     expect(after['map']!).toBeLessThan(before['map']!);
@@ -50,8 +60,13 @@ describe('1 — Akuter Blutverlust 1000 mL', () => {
 });
 
 describe('2 — Chronisch hohe Kochsalzzufuhr', () => {
-  const before = values(settled({}, 14 * DAY));
-  const after = values(settled({ sodiumIntake: 400 }, 14 * DAY));
+  let before: Values;
+  let after: Values;
+
+  beforeAll(async () => {
+    before = values(await settled({}, 14 * DAY));
+    after = values(await settled({ sodiumIntake: 400 }, 14 * DAY));
+  });
 
   it('bringt die Ausscheidung wieder auf die Zufuhr', () => {
     // Pressure natriuresis plus RAAS suppression restore balance.
@@ -76,8 +91,13 @@ describe('2 — Chronisch hohe Kochsalzzufuhr', () => {
 });
 
 describe('3 — Einseitige Nierenarterienstenose', () => {
-  const before = values(settled({}, 7 * DAY));
-  const after = values(settled({ renalArteryStenosisLeft: 30 }, 7 * DAY));
+  let before: Values;
+  let after: Values;
+
+  beforeAll(async () => {
+    before = values(await settled({}, 7 * DAY));
+    after = values(await settled({ renalArteryStenosisLeft: 30 }, 7 * DAY));
+  });
 
   it('lässt vor allem die stenosierte Niere Renin freisetzen', () => {
     expect(after['renin-left']!).toBeGreaterThan(before['renin-left']! * 1.8);
@@ -100,18 +120,28 @@ describe('3 — Einseitige Nierenarterienstenose', () => {
 });
 
 describe('4 — ACE-Hemmer bei beidseitiger Stenose (Kernlernmoment)', () => {
-  const sim = settled({ renalArteryStenosisLeft: 30, renalArteryStenosisRight: 30 }, 3 * DAY);
-  const before = values(sim);
-  sim.setParams({
-    renalArteryStenosisLeft: 30,
-    renalArteryStenosisRight: 30,
-    aceInhibitor: 100,
+  const stenosis = { renalArteryStenosisLeft: 30, renalArteryStenosisRight: 30 };
+  let before: Values;
+  let acute: Values;
+  let after: Values;
+  let healthyDrop: number;
+
+  beforeAll(async () => {
+    const sim = await settled(stenosis, 3 * DAY);
+    before = values(sim);
+    sim.setParams({ ...stenosis, aceInhibitor: 100 });
+    // The nadir is a few minutes in; after that the renin rebound starts taking it back.
+    await advanceChunked(sim, 5 * MINUTE);
+    acute = values(sim);
+    await advanceChunked(sim, 115 * MINUTE);
+    after = values(sim);
+
+    const healthy = await settled({}, 3 * DAY);
+    const healthyBefore = values(healthy).gfr!;
+    healthy.setParams({ aceInhibitor: 100 });
+    await advanceChunked(healthy, 5 * MINUTE);
+    healthyDrop = change(healthyBefore, values(healthy).gfr!);
   });
-  // The nadir is a few minutes in; after that the renin rebound starts taking it back.
-  sim.advance(5 * MINUTE);
-  const acute = values(sim);
-  sim.advance(115 * MINUTE);
-  const after = values(sim);
 
   it('lässt die GFR akut einbrechen', () => {
     expect(change(before['gfr']!, acute['gfr']!)).toBeLessThan(-0.2);
@@ -138,18 +168,18 @@ describe('4 — ACE-Hemmer bei beidseitiger Stenose (Kernlernmoment)', () => {
   });
 
   it('trifft eine gesunde Niere weit weniger hart', () => {
-    const healthy = settled({}, 3 * DAY);
-    const healthyBefore = values(healthy).gfr!;
-    healthy.setParams({ aceInhibitor: 100 });
-    healthy.advance(5 * MINUTE);
-    const healthyDrop = change(healthyBefore, values(healthy).gfr!);
     expect(healthyDrop).toBeGreaterThan(change(before['gfr']!, acute['gfr']!));
   });
 });
 
 describe('5 — Conn-Syndrom', () => {
-  const before = values(settled({}, 14 * DAY));
-  const after = values(settled({ primaryAldosteronism: 100 }, 14 * DAY));
+  let before: Values;
+  let after: Values;
+
+  beforeAll(async () => {
+    before = values(await settled({}, 14 * DAY));
+    after = values(await settled({ primaryAldosteronism: 100 }, 14 * DAY));
+  });
 
   it('zeigt hohes Aldosteron bei supprimiertem Renin', () => {
     expect(after['aldosterone']!).toBeGreaterThan(before['aldosterone']! * 3);
@@ -166,13 +196,19 @@ describe('5 — Conn-Syndrom', () => {
 });
 
 describe('6 — Schleifendiuretikum', () => {
-  const before = values(settled({}, 2 * DAY));
-  const sim = settled({}, 2 * DAY);
-  sim.setParams({ loopDiuretic: 100 });
-  sim.advance(6 * HOUR);
-  const acute = values(sim);
-  sim.advance(42 * HOUR);
-  const after = values(sim);
+  let before: Values;
+  let acute: Values;
+  let after: Values;
+
+  beforeAll(async () => {
+    before = values(await settled({}, 2 * DAY));
+    const sim = await settled({}, 2 * DAY);
+    sim.setParams({ loopDiuretic: 100 });
+    await advanceChunked(sim, 6 * HOUR);
+    acute = values(sim);
+    await advanceChunked(sim, 42 * HOUR);
+    after = values(sim);
+  });
 
   it('steigert die Urinmenge stark', () => {
     expect(acute['urineFlow']!).toBeGreaterThan(before['urineFlow']! * 2);
@@ -197,18 +233,23 @@ describe('6 — Schleifendiuretikum', () => {
 });
 
 describe('7 — NSAR + ACE-Hemmer + Diuretikum ("triple whammy")', () => {
-  const base = settled({}, 2 * DAY);
-  const before = values(base);
+  let before: Values;
+  let nsaidOnly: Values;
+  let after: Values;
 
-  const single = settled({}, 2 * DAY);
-  single.setParams({ nsaid: 100 });
-  single.advance(2 * DAY);
-  const nsaidOnly = values(single);
+  beforeAll(async () => {
+    before = values(await settled({}, 2 * DAY));
 
-  const sim = settled({}, 2 * DAY);
-  sim.setParams({ nsaid: 100, aceInhibitor: 100, loopDiuretic: 100 });
-  sim.advance(2 * DAY);
-  const after = values(sim);
+    const single = await settled({}, 2 * DAY);
+    single.setParams({ nsaid: 100 });
+    await advanceChunked(single, 2 * DAY);
+    nsaidOnly = values(single);
+
+    const sim = await settled({}, 2 * DAY);
+    sim.setParams({ nsaid: 100, aceInhibitor: 100, loopDiuretic: 100 });
+    await advanceChunked(sim, 2 * DAY);
+    after = values(sim);
+  });
 
   it('lässt NSAR allein die GFR nur wenig verändern', () => {
     expect(Math.abs(change(before['gfr']!, nsaidOnly['gfr']!))).toBeLessThan(0.2);
@@ -224,7 +265,16 @@ describe('7 — NSAR + ACE-Hemmer + Diuretikum ("triple whammy")', () => {
 });
 
 describe('8 — Autoregulation abgeschaltet', () => {
-  function gfrAt(mapDriver: number, autoregulation: boolean) {
+  interface Point {
+    map: number;
+    gfr: number;
+  }
+  let lowWith: Point;
+  let highWith: Point;
+  let lowWithout: Point;
+  let highWithout: Point;
+
+  async function gfrAt(mapDriver: number, autoregulation: boolean): Promise<Point> {
     const params: Record<string, number> = {
       vascularTone: mapDriver,
       // The baroreflex would undo the pressure change we want to impose.
@@ -234,17 +284,18 @@ describe('8 — Autoregulation abgeschaltet', () => {
       params['tgfEnabled'] = 0;
       params['myogenicEnabled'] = 0;
     }
-    const sim = settled(params, 30 * MINUTE);
-    const v = values(sim);
+    const v = values(await settled(params, 30 * MINUTE));
     return { map: v['map']!, gfr: v['gfr']! };
   }
 
-  it('lässt die GFR ohne Autoregulation viel stärker dem Druck folgen', () => {
-    const lowWith = gfrAt(0.8, true);
-    const highWith = gfrAt(1.3, true);
-    const lowWithout = gfrAt(0.8, false);
-    const highWithout = gfrAt(1.3, false);
+  beforeAll(async () => {
+    lowWith = await gfrAt(0.8, true);
+    highWith = await gfrAt(1.3, true);
+    lowWithout = await gfrAt(0.8, false);
+    highWithout = await gfrAt(1.3, false);
+  });
 
+  it('lässt die GFR ohne Autoregulation viel stärker dem Druck folgen', () => {
     // Sanity: the driver really did move the pressure in both settings.
     expect(highWith.map - lowWith.map).toBeGreaterThan(10);
     expect(highWithout.map - lowWithout.map).toBeGreaterThan(10);
@@ -257,14 +308,14 @@ describe('8 — Autoregulation abgeschaltet', () => {
 });
 
 describe('9 — Drucksprung: Sekunden gegen Tage', () => {
-  it('fängt eine akute Drucksteigerung binnen Sekunden über den Reflex ab', () => {
-    const sim = settled();
+  it('fängt eine akute Drucksteigerung binnen Sekunden über den Reflex ab', async () => {
+    const sim = await settled();
     const before = values(sim);
     sim.setParams({ vascularTone: 1.35 });
     sim.advance(30);
     const withReflex = values(sim);
 
-    const noReflex = settled({ baroreflexEnabled: 0 });
+    const noReflex = await settled({ baroreflexEnabled: 0 });
     noReflex.setParams({ vascularTone: 1.35, baroreflexEnabled: 0 });
     noReflex.advance(30);
     const without = values(noReflex);
@@ -275,15 +326,15 @@ describe('9 — Drucksprung: Sekunden gegen Tage', () => {
     expect(withReflex['map']!).toBeLessThan(without['map']!);
   });
 
-  it('begrenzt eine chronische Salz-Retention über die Druck-Natriurese', () => {
+  it('begrenzt eine chronische Salz-Retention über die Druck-Natriurese', async () => {
     // The long-term controller is only visible once the hormonal loops can no longer
     // escape — an autonomous mineralocorticoid load is exactly that situation.
     // See docs/model/validation.md on why salt loading alone does not show this.
-    const baseline = values(settled({}, 14 * DAY))['map']!;
+    const baseline = values(await settled({}, 14 * DAY))['map']!;
 
-    const withKidney = values(settled({ primaryAldosteronism: 60 }, 14 * DAY));
+    const withKidney = values(await settled({ primaryAldosteronism: 60 }, 14 * DAY));
     const withoutKidney = values(
-      settled({ primaryAldosteronism: 60, pressureNatriuresisEnabled: 0 }, 14 * DAY),
+      await settled({ primaryAldosteronism: 60, pressureNatriuresisEnabled: 0 }, 14 * DAY),
     );
 
     const withRise = withKidney['map']! - baseline;
@@ -295,11 +346,11 @@ describe('9 — Drucksprung: Sekunden gegen Tage', () => {
     expect(withKidney['ecfVolume']!).toBeLessThan(withoutKidney['ecfVolume']! - 2);
   });
 
-  it('lässt den Reflex-Sollwert über Tage nachziehen', () => {
-    const sim = settled({ primaryAldosteronism: 100 });
+  it('lässt den Reflex-Sollwert über Tage nachziehen', async () => {
+    const sim = await settled({ primaryAldosteronism: 100 });
     sim.advance(60);
     const early = values(sim);
-    sim.advance(7 * DAY);
+    await advanceChunked(sim, 7 * DAY);
     const late = values(sim);
 
     // Resetting: the set point follows the prevailing pressure, so the reflex stops
