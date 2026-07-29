@@ -100,30 +100,40 @@ describe('3 — Einseitige Nierenarterienstenose', () => {
 });
 
 describe('4 — ACE-Hemmer bei beidseitiger Stenose (Kernlernmoment)', () => {
-  const sim = settled({ renalArteryStenosisLeft: 40, renalArteryStenosisRight: 40 }, 3 * DAY);
+  const sim = settled({ renalArteryStenosisLeft: 30, renalArteryStenosisRight: 30 }, 3 * DAY);
   const before = values(sim);
   sim.setParams({
-    renalArteryStenosisLeft: 40,
-    renalArteryStenosisRight: 40,
+    renalArteryStenosisLeft: 30,
+    renalArteryStenosisRight: 30,
     aceInhibitor: 100,
   });
-  sim.advance(2 * HOUR);
+  // The nadir is a few minutes in; after that the renin rebound starts taking it back.
+  sim.advance(5 * MINUTE);
+  const acute = values(sim);
+  sim.advance(115 * MINUTE);
   const after = values(sim);
 
-  it('lässt die GFR deutlich abfallen', () => {
-    expect(change(before['gfr']!, after['gfr']!)).toBeLessThan(-0.15);
+  it('lässt die GFR akut einbrechen', () => {
+    expect(change(before['gfr']!, acute['gfr']!)).toBeLessThan(-0.2);
+  });
+
+  it('hält die GFR auch nach zwei Stunden unter dem Ausgangswert', () => {
+    // Angiotensin escape: renin rises against the blockade and takes part of the
+    // efferent tone back, so the acute collapse softens but does not resolve.
+    expect(change(before['gfr']!, after['gfr']!)).toBeLessThan(-0.1);
+    expect(after['gfr']!).toBeGreaterThan(acute['gfr']!);
   });
 
   it('senkt den glomerulären Kapillardruck', () => {
-    expect(after['pgc-left']!).toBeLessThan(before['pgc-left']!);
+    expect(acute['pgc-left']!).toBeLessThan(before['pgc-left']!);
   });
 
   it('senkt die Filtrationsfraktion — das Vas efferens ist offen', () => {
-    expect(after['filtrationFraction']!).toBeLessThan(before['filtrationFraction']! * 0.8);
+    expect(acute['filtrationFraction']!).toBeLessThan(before['filtrationFraction']! * 0.8);
   });
 
   it('senkt das AT1-Signal und steigert reaktiv das Renin', () => {
-    expect(after['angiotensinIIEffect']!).toBeLessThan(before['angiotensinIIEffect']! * 0.6);
+    expect(acute['angiotensinIIEffect']!).toBeLessThan(before['angiotensinIIEffect']! * 0.6);
     expect(after['plasmaReninActivity']!).toBeGreaterThan(before['plasmaReninActivity']!);
   });
 
@@ -131,9 +141,9 @@ describe('4 — ACE-Hemmer bei beidseitiger Stenose (Kernlernmoment)', () => {
     const healthy = settled({}, 3 * DAY);
     const healthyBefore = values(healthy).gfr!;
     healthy.setParams({ aceInhibitor: 100 });
-    healthy.advance(2 * HOUR);
+    healthy.advance(5 * MINUTE);
     const healthyDrop = change(healthyBefore, values(healthy).gfr!);
-    expect(healthyDrop).toBeGreaterThan(change(before['gfr']!, after['gfr']!));
+    expect(healthyDrop).toBeGreaterThan(change(before['gfr']!, acute['gfr']!));
   });
 });
 

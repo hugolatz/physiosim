@@ -39,6 +39,42 @@ export interface KidneyState {
   freeWaterClearanceMlPerMin: number;
 
   reninSecretionRelative: number;
+
+  /**
+   * The individual multiplicative contributions the model actually used this step.
+   *
+   * Recorded rather than recomputed, so the "Warum?" explanation quotes the very numbers
+   * that produced the result and cannot drift away from them.
+   */
+  factors: KidneyFactors;
+}
+
+/** 1 means "this influence is currently doing nothing". */
+export interface KidneyFactors {
+  afferentMyogenic: number;
+  afferentTgf: number;
+  afferentSympathetic: number;
+  afferentAngiotensin: number;
+  afferentProstaglandin: number;
+  afferentDrug: number;
+  efferentAngiotensin: number;
+  efferentSympathetic: number;
+  efferentDrug: number;
+  proximalPressure: number;
+  proximalAngiotensin: number;
+  proximalAnp: number;
+  proximalDrug: number;
+  thickAscendingDrug: number;
+  distalDrug: number;
+  collectingAldosterone: number;
+  collectingAnp: number;
+  collectingDrug: number;
+  reninPressure: number;
+  reninMaculaDensa: number;
+  reninSympathetic: number;
+  reninAngiotensinFeedback: number;
+  reninAnp: number;
+  reninDrug: number;
 }
 
 export interface KidneyInput {
@@ -81,6 +117,7 @@ export function initialKidneyState(): KidneyState {
     collectingDuctReabsorptionMmolPerMin: filtered * C.COLLECTING_DUCT_FRACTION,
     maculaDensaDeliveryMmolPerMin: C.MACULA_DENSA_REFERENCE_MMOL_PER_MIN,
     sodiumExcretionMmolPerMin: 150 / 1440 / 2,
+    factors: neutralFactors(),
     potassiumExcretionMmolPerMin: C.POTASSIUM_EXCRETION_MMOL_PER_MIN / 2,
     urineFlowMlPerMin: C.URINE_FLOW_ML_PER_MIN / 2,
     urineOsmolalityMosmPerKg: C.URINE_OSMOLALITY_MOSM_PER_KG,
@@ -99,6 +136,35 @@ function aldosteronePotassiumFactor(aldosteroneNgPerL: number): number {
   const raw = C.POTASSIUM_ALDOSTERONE_FLOOR + (C.POTASSIUM_ALDOSTERONE_SPAN * a) / (a + 1);
   const atRest = C.POTASSIUM_ALDOSTERONE_FLOOR + C.POTASSIUM_ALDOSTERONE_SPAN / 2;
   return raw / atRest;
+}
+
+function neutralFactors(): KidneyFactors {
+  return {
+    afferentMyogenic: 1,
+    afferentTgf: 1,
+    afferentSympathetic: 1,
+    afferentAngiotensin: 1,
+    afferentProstaglandin: 1,
+    afferentDrug: 1,
+    efferentAngiotensin: 1,
+    efferentSympathetic: 1,
+    efferentDrug: 1,
+    proximalPressure: 1,
+    proximalAngiotensin: 1,
+    proximalAnp: 1,
+    proximalDrug: 1,
+    thickAscendingDrug: 1,
+    distalDrug: 1,
+    collectingAldosterone: 1,
+    collectingAnp: 1,
+    collectingDrug: 1,
+    reninPressure: 1,
+    reninMaculaDensa: 1,
+    reninSympathetic: 1,
+    reninAngiotensinFeedback: 1,
+    reninAnp: 1,
+    reninDrug: 1,
+  };
 }
 
 export function stepKidney(prev: KidneyState, input: KidneyInput, dt: Seconds): KidneyState {
@@ -142,14 +208,18 @@ export function stepKidney(prev: KidneyState, input: KidneyInput, dt: Seconds): 
     : 1;
   const tgfFactor = relax(prev.tgfFactor, tgfTarget, C.TAU_TGF, dt);
 
+  const afferentSympathetic = respond(tone, C.RENAL_SYMPATHETIC_GAIN);
+  const afferentAngiotensin = respond(angII, C.AFFERENT_ANGIOTENSIN_GAIN);
+  // NSAIDs remove the prostaglandin brake on afferent constriction.
+  const afferentProstaglandin =
+    1 + C.AFFERENT_PROSTAGLANDIN_GAIN * (1 - mod['pge2.afferentDilation']);
   const afferentResistance = clamp(
     C.R_AFFERENT_BASE *
       myogenic *
       tgfFactor *
-      respond(tone, C.RENAL_SYMPATHETIC_GAIN) *
-      respond(angII, C.AFFERENT_ANGIOTENSIN_GAIN) *
-      // NSAIDs remove the prostaglandin brake on afferent constriction.
-      (1 + C.AFFERENT_PROSTAGLANDIN_GAIN * (1 - mod['pge2.afferentDilation'])) *
+      afferentSympathetic *
+      afferentAngiotensin *
+      afferentProstaglandin *
       mod['raff.tone'],
     C.R_AFFERENT_BASE * 0.3,
     C.R_AFFERENT_BASE * 6,
@@ -157,11 +227,10 @@ export function stepKidney(prev: KidneyState, input: KidneyInput, dt: Seconds): 
 
   // The efferent arteriole is the angiotensin II arteriole. Take angiotensin II away and it
   // dilates — which is precisely why an ACE inhibitor drops GFR behind a stenosis.
+  const efferentAngiotensin = respond(angII, C.EFFERENT_ANGIOTENSIN_GAIN, 0.4);
+  const efferentSympathetic = respond(tone, C.EFFERENT_SYMPATHETIC_GAIN);
   const efferentResistance = clamp(
-    C.R_EFFERENT_BASE *
-      respond(angII, C.EFFERENT_ANGIOTENSIN_GAIN, 0.4) *
-      respond(tone, C.EFFERENT_SYMPATHETIC_GAIN) *
-      mod['reff.tone'],
+    C.R_EFFERENT_BASE * efferentAngiotensin * efferentSympathetic * mod['reff.tone'],
     C.R_EFFERENT_BASE * 0.3,
     C.R_EFFERENT_BASE * 4,
   );
@@ -200,11 +269,13 @@ export function stepKidney(prev: KidneyState, input: KidneyInput, dt: Seconds): 
         1.5,
       )
     : 1;
+  const proximalAngiotensin = respond(angII, C.PROXIMAL_ANGIOTENSIN_GAIN);
+  const proximalAnp = 1 - C.PROXIMAL_ANP_GAIN * (anp - 1);
   const proximalFraction = clamp(
     C.PROXIMAL_FRACTION *
       pressureFactor *
-      respond(angII, C.PROXIMAL_ANGIOTENSIN_GAIN) *
-      (1 - C.PROXIMAL_ANP_GAIN * (anp - 1)) *
+      proximalAngiotensin *
+      proximalAnp *
       mod['nhe3.transport'],
     0.2,
     0.85,
@@ -246,11 +317,9 @@ export function stepKidney(prev: KidneyState, input: KidneyInput, dt: Seconds): 
   );
   remaining -= distalReabsorptionMmolPerMin;
 
+  const collectingAnp = 1 - C.COLLECTING_DUCT_ANP_GAIN * (anp - 1);
   const collectingFraction = clamp(
-    C.COLLECTING_DUCT_FRACTION *
-      aldosteroneFactor *
-      (1 - C.COLLECTING_DUCT_ANP_GAIN * (anp - 1)) *
-      mod['enac.transport'],
+    C.COLLECTING_DUCT_FRACTION * aldosteroneFactor * collectingAnp * mod['enac.transport'],
     0,
     0.2,
   );
@@ -368,5 +437,31 @@ export function stepKidney(prev: KidneyState, input: KidneyInput, dt: Seconds): 
     urineSodiumMmolPerL,
     freeWaterClearanceMlPerMin,
     reninSecretionRelative,
+    factors: {
+      afferentMyogenic: myogenic,
+      afferentTgf: tgfFactor,
+      afferentSympathetic,
+      afferentAngiotensin,
+      afferentProstaglandin,
+      afferentDrug: mod['raff.tone'],
+      efferentAngiotensin,
+      efferentSympathetic,
+      efferentDrug: mod['reff.tone'],
+      proximalPressure: pressureFactor,
+      proximalAngiotensin,
+      proximalAnp,
+      proximalDrug: mod['nhe3.transport'],
+      thickAscendingDrug: mod['nkcc2.transport'],
+      distalDrug: mod['ncc.transport'],
+      collectingAldosterone: aldosteroneFactor,
+      collectingAnp,
+      collectingDrug: mod['enac.transport'],
+      reninPressure: pressureArm,
+      reninMaculaDensa: maculaDensaArm,
+      reninSympathetic: sympatheticArm,
+      reninAngiotensinFeedback: angiotensinFeedback,
+      reninAnp: anpArm,
+      reninDrug: mod['renin.secretion'],
+    },
   };
 }

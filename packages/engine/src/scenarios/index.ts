@@ -78,13 +78,13 @@ export const SCENARIOS: readonly Scenario[] = [
       'Die GFR fällt deutlich ab: ohne Angiotensin II dilatiert das Vas efferens, ' +
       'der glomeruläre Kapillardruck bricht weg.',
     params: {
-      renalArteryStenosisLeft: 40,
-      renalArteryStenosisRight: 40,
+      renalArteryStenosisLeft: 30,
+      renalArteryStenosisRight: 30,
       aceInhibitor: 100,
     },
     // First let the stenosis settle, then give the drug — otherwise the collapse of the
     // GFR cannot be told apart from the stenosis itself.
-    baseline: { renalArteryStenosisLeft: 40, renalArteryStenosisRight: 40 },
+    baseline: { renalArteryStenosisLeft: 30, renalArteryStenosisRight: 30 },
     settleBeforeSeconds: 3 * DAY,
     settleSeconds: 2 * HOUR,
     focus: ['gfr', 'pgc-left', 'angiotensinIIEffect', 'filtrationFraction'],

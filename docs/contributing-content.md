@@ -1,8 +1,7 @@
 # Lerninhalte ergänzen
 
-> Das Content-System selbst wird in **M3** gebaut. Diese Datei legt jetzt schon fest, wie
-> Inhalte aussehen müssen, damit die Knoten im Modell (`contentId`) von Anfang an auf die
-> richtigen Dateinamen zeigen.
+Stand: 24 Lerninhalte, alle mit Quellenangabe. Die CI prüft das bei jedem Commit
+(`npm run content:check --workspace @physiosim/web`).
 
 ## Wo
 
@@ -12,6 +11,17 @@
 ```bash
 grep -rho "contentId: '[^']*'" packages/engine/src | sort -u
 ```
+
+## Werkzeuge
+
+```bash
+npm run content --workspace @physiosim/web        # prüfen und Registry neu erzeugen
+npm run content:check --workspace @physiosim/web  # nur prüfen (so läuft es in der CI)
+```
+
+Die Registry (`content/registry.generated.ts`) wird erzeugt, nicht von Hand gepflegt. Sie
+enthält die geprüfte Frontmatter und einen Import je Knoten — deshalb muss sie mitcommittet
+werden.
 
 ## Aufbau
 
@@ -55,6 +65,30 @@ der Mechanismus soll nie ohne seine klinische Konsequenz zu sehen sein und umgek
    das Modell diesen Wert im Ruhezustand auch liefern — sonst widerspricht der Lerntext
    der Simulation daneben. Im Zweifel `docs/model/constants.md` prüfen.
 5. **Deutsch.** Fachbegriffe in der im deutschsprachigen Studium üblichen Form.
+
+## Verfügbare Komponenten
+
+Querverweis auf einen anderen Knoten — die Beschriftung kommt aus dessen Frontmatter, damit
+eine Umbenennung keinen falschen Linktext hinterlässt:
+
+```mdx
+<Verweis id="renin" />
+<Verweis id="renin">das Renin</Verweis>
+```
+
+Prüfungsfrage im Fünf-Antworten-Format. Jede Option braucht eine Begründung — bei den
+Distraktoren liegt der Lerneffekt:
+
+```mdx
+<Frage frage="Warum fällt die GFR unter ACE-Hemmer bei beidseitiger Stenose?">
+  <Option erklaerung="Der Druckabfall allein erklärt das Ausmaß nicht.">
+    Weil der Blutdruck sinkt
+  </Option>
+  <Option richtig erklaerung="Ohne Angiotensin II dilatiert das Vas efferens, P_GC bricht weg.">
+    Weil das Vas efferens dilatiert
+  </Option>
+</Frage>
+```
 
 ## Lizenz
 

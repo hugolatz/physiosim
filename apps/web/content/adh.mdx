@@ -1,0 +1,87 @@
+---
+id: adh
+title: ADH (Vasopressin)
+system: cardio-renal
+tags: [Wasserhaushalt, Osmolalität, Sammelrohr, AQP2]
+sources:
+  - 'Boron & Boulpaep, Medical Physiology — Integration of Salt and Water Balance'
+  - 'Silbernagl/Despopoulos, Taschenatlas Physiologie — Wasserhaushalt'
+---
+
+## Basis
+
+ADH wird im Hypothalamus gebildet und aus der **Neurohypophyse** freigesetzt. Es regelt
+ausschließlich das **Wasser**, nicht das Natrium — dieser Unterschied ist der Schlüssel zum
+Verständnis der Hyponatriämie.
+
+Zwei Reize:
+
+- **Osmotisch**: Osmorezeptoren im Hypothalamus, Schwelle bei etwa **280–285 mosm/kg**. Über
+  dieser Schwelle steigt ADH nahezu linear. Das System ist außerordentlich empfindlich —
+  wenige mosm/kg genügen.
+- **Nicht-osmotisch (Volumen/Druck)**: Barorezeptoren. Dieser Reiz greift erst bei einem
+  Druckabfall von mehr als etwa 5–10 %, dann aber **steil**.
+
+Daraus folgt die klinisch wichtige Rangordnung: **Volumen schlägt Osmolalität**. Bei
+schwerer Hypovolämie schüttet der Körper ADH aus, auch wenn er dadurch hyponatriäm wird —
+Kreislauf vor Konzentration.
+
+Am Sammelrohr wirkt ADH über den **V2-Rezeptor** und baut **Aquaporin-2** in die luminale
+Membran ein. Ohne AQP2 ist das Sammelrohr wasserdicht.
+
+## Klinik
+
+**Diabetes insipidus** — zentral (kein ADH) oder renal (V2-Rezeptor defekt): Polyurie mit
+maximal verdünntem Urin, Hypernatriämie, sofern der Patient nicht trinken kann. Im Simulator
+ist genau das der Schalter „Durst wirksam".
+
+**SIADH**: ADH wird unabhängig von der Osmolalität freigesetzt. Folge ist eine
+**Verdünnungshyponatriämie** bei konzentriertem Urin. Weil der Reiz nicht osmotisch ist,
+schaltet die fallende Osmolalität ihn auch nicht ab — deshalb ist SIADH im Modell als
+Untergrenze abgebildet, nicht als Faktor.
+
+<Verweis id="desmopressin" /> ist ein V2-selektives Analogon.
+
+## Prüfung
+
+<Frage frage="Ein Patient hat eine Serum-Natrium-Konzentration von 122 mmol/L bei einer Urinosmolalität von 600 mosm/kg und normalem Volumenstatus. Was passt?">
+  <Option
+    richtig
+    erklaerung="Osmolalitätsunabhängige ADH-Freisetzung führt zur Wasserretention. Der Urin bleibt konzentriert, obwohl das Serum verdünnt ist — genau diese Diskrepanz ist der Befund."
+  >
+    SIADH
+  </Option>
+  <Option erklaerung="Beim Diabetes insipidus wäre der Urin maximal verdünnt und das Natrium erhöht.">
+    Zentraler Diabetes insipidus
+  </Option>
+  <Option erklaerung="Bei Volumenmangel wäre der Volumenstatus nicht normal, und die Urin-Natrium-Konzentration wäre niedrig.">
+    Hypovolämische Hyponatriämie
+  </Option>
+  <Option erklaerung="Der primäre Hyperaldosteronismus geht mit hochnormalem Natrium einher.">
+    Primärer Hyperaldosteronismus
+  </Option>
+  <Option erklaerung="Eine reine Wasserintoxikation würde einen maximal verdünnten Urin zeigen, weil ADH supprimiert wäre.">
+    Primäre Polydipsie
+  </Option>
+</Frage>
+
+<Frage frage="Welche Aussage zur ADH-Regulation trifft zu?">
+  <Option erklaerung="Der osmotische Reiz ist der empfindlichere, aber nicht der stärkere.">
+    Der osmotische Reiz überstimmt bei schwerer Hypovolämie den Volumenreiz
+  </Option>
+  <Option
+    richtig
+    erklaerung="Der Volumenreiz greift erst bei stärkerem Druckabfall, wirkt dann aber steil und setzt sich über die Osmolalität hinweg. Deshalb kann eine Hypovolämie eine Hyponatriämie erzeugen."
+  >
+    Der Volumenreiz greift erst spät, überstimmt dann aber die Osmolalität
+  </Option>
+  <Option erklaerung="ADH regelt Wasser, nicht Natrium. Die Na⁺-Resorption ist Sache von Aldosteron und dem proximalen Tubulus.">
+    ADH steigert vor allem die Natriumresorption
+  </Option>
+  <Option erklaerung="Die osmotische Schwelle liegt bei 280–285 mosm/kg, also unterhalb des Normalwerts von 290.">
+    Die osmotische Schwelle liegt bei etwa 310 mosm/kg
+  </Option>
+  <Option erklaerung="ADH wirkt über V2-Rezeptoren am Sammelrohr, nicht am proximalen Tubulus.">
+    ADH wirkt hauptsächlich am proximalen Tubulus
+  </Option>
+</Frage>

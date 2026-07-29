@@ -1,0 +1,88 @@
+---
+id: ang-ii
+title: Angiotensin II
+system: cardio-renal
+tags: [RAAS, Vasokonstriktion, Niere, AT1-Rezeptor]
+sources:
+  - 'Boron & Boulpaep, Medical Physiology — Integration of Salt and Water Balance'
+  - 'Silbernagl/Despopoulos, Taschenatlas Physiologie — Salz- und Wasserhaushalt'
+---
+
+## Basis
+
+Angiotensin II entsteht aus Angiotensin I durch das **Angiotensin-Converting-Enzyme (ACE)**,
+vor allem im Lungenendothel. Seine Halbwertszeit liegt unter einer Minute — es folgt dem
+Renin also fast unmittelbar. Alle Wirkungen laufen über den **AT1-Rezeptor**:
+
+- **Systemische Vasokonstriktion** → peripherer Widerstand ↑
+- **Konstriktion des Vas efferens stärker als des Vas afferens** → der glomeruläre
+  Kapillardruck wird gehalten, obwohl der Nierenblutfluss fällt. Die Filtrationsfraktion
+  steigt (<Verweis id="filtrationsfraktion" />).
+- **Na⁺-Rückresorption im proximalen Tubulus ↑** über den NHE3
+- **Aldosteronfreisetzung ↑** (<Verweis id="aldosteron" />)
+- **ADH-Freisetzung und Durst ↑**
+
+Der entscheidende didaktische Punkt ist die **Ungleichheit der beiden Arteriolen**. Weil das
+Vas efferens hinter dem Glomerulus liegt, staut seine Konstriktion den Druck im Kapillarknäuel
+auf. Das ist der Mechanismus, mit dem die Niere bei niedrigem Perfusionsdruck ihre Filtration
+rettet — und genau der Mechanismus, den eine RAAS-Blockade wegnimmt.
+
+## Klinik
+
+Zwei Wirkstoffklassen greifen an: <Verweis id="ace-hemmer" /> verhindern die Bildung, <Verweis id="at1-blocker" />
+besetzen den Rezeptor. Der klinisch wichtige Unterschied in der Laborinterpretation: unter
+einem AT1-Blocker **steigt** die Angiotensin-II-Konzentration, während die Wirkung fällt.
+Konzentration und Signal sind nicht dasselbe — im Simulator stehen beide Zahlen nebeneinander.
+
+Unter ACE-Hemmern kommt es über Stunden zum **Angiotensin-Escape**: das reaktiv steigende
+Renin treibt die Kaskade gegen die Blockade an, und ein Teil des AT1-Signals kehrt zurück.
+Im Simulator ist das gut zu sehen — der akute GFR-Einbruch bei beidseitiger Stenose
+mildert sich über zwei Stunden, verschwindet aber nicht.
+
+Klinisch am wichtigsten: Wo der Glomerulus auf die efferente Konstriktion angewiesen ist —
+Nierenarterienstenose, schwere Herzinsuffizienz, Volumenmangel — führt die Blockade zum
+akuten GFR-Abfall.
+
+## Prüfung
+
+<Frage frage="Warum fällt die GFR unter einem ACE-Hemmer bei beidseitiger Nierenarterienstenose ab?">
+  <Option erklaerung="Der systemische Druck fällt zwar, aber das allein erklärt den unverhältnismäßig starken GFR-Abfall nicht.">
+    Weil der systemische Blutdruck sinkt
+  </Option>
+  <Option
+    richtig
+    erklaerung="Hinter der Stenose ist der Perfusionsdruck niedrig. Der Glomerulus hält seinen Kapillardruck nur noch durch die Angiotensin-II-vermittelte Konstriktion des Vas efferens. Fällt diese weg, bricht P_GC und damit die Filtration ein."
+  >
+    Weil das Vas efferens dilatiert und der glomeruläre Kapillardruck wegbricht
+  </Option>
+  <Option erklaerung="Das Vas afferens konstringiert unter ACE-Hemmung eher weniger, nicht mehr.">
+    Weil das Vas afferens konstringiert
+  </Option>
+  <Option erklaerung="Der Filtrationskoeffizient wird durch ACE-Hemmer nicht relevant verändert.">
+    Weil der Filtrationskoeffizient Kf sinkt
+  </Option>
+  <Option erklaerung="Der onkotische Druck ändert sich unter ACE-Hemmung nicht wesentlich.">
+    Weil der onkotische Druck steigt
+  </Option>
+</Frage>
+
+<Frage frage="Ein Patient nimmt einen AT1-Blocker. Welche Laborkonstellation erwarten Sie?">
+  <Option
+    richtig
+    erklaerung="Der Rezeptor ist blockiert, die negative Rückkopplung auf das Renin fällt weg. Renin und Angiotensin II steigen beide an, während die biologische Wirkung vermindert ist."
+  >
+    Angiotensin II erhöht, Reninaktivität erhöht
+  </Option>
+  <Option erklaerung="Angiotensin II fällt unter ACE-Hemmern, nicht unter AT1-Blockern.">
+    Angiotensin II erniedrigt, Reninaktivität erhöht
+  </Option>
+  <Option erklaerung="Die Blockade der Rückkopplung lässt das Renin steigen, nicht fallen.">
+    Angiotensin II erhöht, Reninaktivität erniedrigt
+  </Option>
+  <Option erklaerung="Beides erniedrigt passt zum primären Hyperaldosteronismus, nicht zur AT1-Blockade.">
+    Beide erniedrigt
+  </Option>
+  <Option erklaerung="Der AT1-Blocker greift messbar in die Kaskade ein; unveränderte Werte wären nicht zu erwarten.">
+    Beide unverändert
+  </Option>
+</Frage>

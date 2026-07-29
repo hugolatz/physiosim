@@ -25,6 +25,8 @@ export type { BalanceState } from './systems/balance';
 export type { CardiovascularState } from './systems/cardiovascular';
 export type { EndocrineState } from './systems/endocrine-raas';
 export type { RenalState } from './systems/renal';
-export type { KidneyState } from './systems/renal/kidney';
+export type { KidneyState, KidneyFactors } from './systems/renal/kidney';
+export type { CardiovascularFactors } from './systems/cardiovascular';
 
 export * from './scenarios';
+export * from './explain';

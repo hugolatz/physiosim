@@ -28,6 +28,9 @@ jobs:
       - name: Format check
         run: npm run format:check
 
+      - name: Lerninhalte prüfen (Quellenangabe ist Pflicht)
+        run: npm run content:check --workspace @physiosim/web
+
       - name: Lint
         run: npm run lint
 

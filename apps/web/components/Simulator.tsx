@@ -1,15 +1,19 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { SCENARIOS } from '@physiosim/engine';
 import { useSimulation } from '@/lib/useSimulation';
 import { bodyVisual } from '@/lib/visuals';
+import { currentShareUrl, decodeState, pushState } from '@/lib/urlState';
 import { BodyView, type OrganId } from '@/components/body/BodyView';
 import { NephronView } from '@/components/organs/NephronView';
 import { HeartView } from '@/components/organs/HeartView';
 import { InterventionPanel } from '@/components/controls/InterventionPanel';
 import { TimeControls } from '@/components/controls/TimeControls';
 import { TimeSeries } from '@/components/readouts/TimeSeries';
+import { WhyPanel } from '@/components/learn/WhyPanel';
+import { ContentDrawer } from '@/components/learn/ContentDrawer';
+import { ScenarioLibrary } from '@/components/learn/ScenarioLibrary';
 import { Disclaimer } from '@/components/learn/Disclaimer';
 import { deviation, formatValue } from '@/lib/format';
 
@@ -28,20 +32,57 @@ export function Simulator() {
   const sim = useSimulation();
   const [organ, setOrgan] = useState<OrganId | null>(null);
   const [scenario, setScenario] = useState('');
+  const [contentId, setContentId] = useState<string | null>(null);
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const restored = useRef(false);
 
   const visual = useMemo(
     () => bodyVisual(sim.signals, sim.renal, sim.cardiovascular),
     [sim.signals, sim.renal, sim.cardiovascular],
   );
 
+  const { setManyParams, runScenario } = sim;
+
   function applyScenario(id: string) {
     setScenario(id);
     const found = SCENARIOS.find((s) => s.id === id);
     if (found === undefined) {
-      sim.setManyParams({}, true);
+      setManyParams({}, true);
       return;
     }
-    sim.runScenario(found.baseline ?? found.params, found.settleBeforeSeconds ?? 0, found.params);
+    runScenario(found.baseline ?? found.params, found.settleBeforeSeconds ?? 0, found.params);
+  }
+
+  // A shared link restores the situation it was taken from.
+  useEffect(() => {
+    if (restored.current) return;
+    restored.current = true;
+    const shared = decodeState(window.location.search);
+    const known = SCENARIOS.find((s) => s.id === shared.scenario);
+    if (known !== undefined) {
+      setScenario(known.id);
+      runScenario(known.baseline ?? known.params, known.settleBeforeSeconds ?? 0, known.params);
+    } else if (Object.keys(shared.params).length > 0) {
+      setManyParams(shared.params, true);
+    }
+  }, [runScenario, setManyParams]);
+
+  // Keep the address bar in step with the sliders, without flooding the history.
+  useEffect(() => {
+    const handle = window.setTimeout(() => pushState(sim.params, scenario || null), 400);
+    return () => window.clearTimeout(handle);
+  }, [sim.params, scenario]);
+
+  async function share() {
+    const url = currentShareUrl(sim.params, scenario || null);
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      window.prompt('Link kopieren:', url);
+    }
   }
 
   const activeScenario = SCENARIOS.find((s) => s.id === scenario);
@@ -63,31 +104,28 @@ export function Simulator() {
             Blutdruckregulation, Niere und RAAS als ein zusammenhängendes Modell.
           </p>
         </div>
-        <label className="text-sm">
-          <span className="mr-2" style={{ color: 'var(--color-ink-muted)' }}>
-            Szenario
-          </span>
-          <select
-            value={scenario}
-            onChange={(e) => applyScenario(e.target.value)}
-            className="rounded-sm border px-2 py-1.5"
-            style={{
-              borderColor: 'var(--color-rule)',
-              backgroundColor: 'var(--color-paper-raised)',
-            }}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setLibraryOpen(true)}
+            className="rounded-sm border px-3 py-1.5 text-sm"
+            style={{ borderColor: 'var(--color-rule)' }}
           >
-            <option value="">— eigenes Setup —</option>
-            {SCENARIOS.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.label}
-              </option>
-            ))}
-          </select>
-        </label>
+            Szenarien{activeScenario !== undefined ? `: ${activeScenario.label}` : ''}
+          </button>
+          <button
+            type="button"
+            onClick={share}
+            className="rounded-sm px-3 py-1.5 text-sm font-medium"
+            style={{ backgroundColor: 'var(--color-ink)', color: 'var(--color-paper)' }}
+          >
+            {copied ? 'Link kopiert' : 'Teilen'}
+          </button>
+        </div>
       </header>
 
       {activeScenario !== undefined && (
-        <p
+        <div
           className="rounded-sm border-l-2 px-3 py-2 text-sm"
           style={{
             borderColor: 'var(--color-signal)',
@@ -95,12 +133,24 @@ export function Simulator() {
             color: 'var(--color-ink-muted)',
           }}
         >
-          <strong style={{ color: 'var(--color-ink)' }}>Aufgabe:</strong> {activeScenario.task}
-        </p>
+          <p>
+            <strong style={{ color: 'var(--color-ink)' }}>Aufgabe:</strong> {activeScenario.task}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setScenario('');
+              setManyParams({}, true);
+            }}
+            className="mt-1 text-xs underline"
+            style={{ color: 'var(--color-ink-faint)' }}
+          >
+            Szenario verlassen
+          </button>
+        </div>
       )}
 
       <div className="grid flex-1 gap-4 xl:grid-cols-[280px_minmax(0,1fr)_300px]">
-        {/* ---- left: interventions ------------------------------------- */}
         <aside
           className="order-2 max-h-[70vh] overflow-y-auto rounded-sm border p-4 xl:order-1"
           style={{ borderColor: 'var(--color-rule)', backgroundColor: 'var(--color-paper-raised)' }}
@@ -109,7 +159,6 @@ export function Simulator() {
           <InterventionPanel params={sim.params} onChange={sim.setParam} />
         </aside>
 
-        {/* ---- centre: the drawing -------------------------------------- */}
         <section
           className="order-1 flex min-h-[520px] flex-col rounded-sm border p-4 xl:order-2"
           style={{ borderColor: 'var(--color-rule)' }}
@@ -135,7 +184,7 @@ export function Simulator() {
             )}
           </div>
 
-          <div className="h-[min(66vh,680px)]">
+          <div className="h-[min(58vh,600px)]">
             {detail === 'kidney' ? (
               <NephronView
                 visual={organ === 'kidneyLeft' ? visual.left : visual.right}
@@ -162,7 +211,6 @@ export function Simulator() {
           </p>
         </section>
 
-        {/* ---- right: numbers and curves --------------------------------- */}
         <aside
           className="order-3 max-h-[70vh] space-y-4 overflow-y-auto rounded-sm border p-4"
           style={{ borderColor: 'var(--color-rule)', backgroundColor: 'var(--color-paper-raised)' }}
@@ -211,6 +259,15 @@ export function Simulator() {
         </aside>
       </div>
 
+      <WhyPanel
+        context={{
+          signals: sim.signals,
+          cardiovascular: sim.cardiovascular,
+          renal: sim.renal,
+        }}
+        onOpenContent={setContentId}
+      />
+
       <TimeControls
         modelTime={sim.modelTime}
         running={sim.running}
@@ -223,6 +280,21 @@ export function Simulator() {
       />
 
       <Disclaimer />
+
+      {libraryOpen && (
+        <ScenarioLibrary
+          activeId={scenario}
+          onPick={applyScenario}
+          onClose={() => setLibraryOpen(false)}
+        />
+      )}
+      {contentId !== null && (
+        <ContentDrawer
+          contentId={contentId}
+          onClose={() => setContentId(null)}
+          onOpenContent={setContentId}
+        />
+      )}
     </div>
   );
 }

@@ -1,0 +1,63 @@
+---
+id: peripherer-widerstand
+title: Peripherer Widerstand und Ganzkörper-Autoregulation
+system: cardio-renal
+tags: [TPR, Hagen-Poiseuille, Autoregulation, Guyton]
+sources:
+  - 'Guyton & Hall, Textbook of Medical Physiology — Local Control of Blood Flow, Overview of the Circulation'
+  - 'Klinke/Pape/Kurtz/Silbernagl, Physiologie — Kreislaufregulation'
+---
+
+## Basis
+
+Der Strömungswiderstand hängt nach **Hagen-Poiseuille** von der vierten Potenz des Radius
+ab:
+
+```
+R ∝ η · l / r⁴
+```
+
+Daraus folgt die für die Anschauung wichtigste Zahl der Kreislaufphysiologie: eine
+Verengung um **16 %** verdoppelt den Widerstand. Deshalb sind die Arteriolen mit ihrer
+kräftigen Muskulatur die Widerstandsgefäße — kleine Kalibersprünge, große Wirkung.
+
+Im Simulator ist diese Beziehung umgekehrt in die Grafik eingebaut: die gezeichnete
+Gefäßweite folgt `r ∝ R^(−1/4)`. Ein verdoppelter Widerstand macht das Gefäß sichtbar, aber
+nicht dramatisch schmaler — genau diese Unverhältnismäßigkeit soll auffallen.
+
+**Ganzkörper-Autoregulation**: Gewebe verteidigen ihre eigene Durchblutung. Bleibt das
+Herzzeitvolumen über dem Bedarf, stellen sich die Widerstandsgefäße über Tage enger, bis
+der Fluss wieder stimmt. Das ist der Mechanismus, der eine volumenbedingte Steigerung des
+Herzzeitvolumens in einen **widerstandsbedingten Hochdruck** umwandelt.
+
+## Klinik
+
+Die Ganzkörper-Autoregulation erklärt den typischen Verlauf der Volumenhypertonie: anfangs
+hohes Herzzeitvolumen bei normalem Widerstand, nach Wochen normales Herzzeitvolumen bei
+erhöhtem Widerstand — bei durchgehend erhöhtem Druck.
+
+Ohne diesen Baustein bliebe eine chronische Volumenlast im Modell nahezu folgenlos für den
+Blutdruck, und das <Verweis id="conn-syndrom" /> wäre keine Ursache einer Hypertonie.
+
+## Prüfung
+
+<Frage frage="Um wie viel muss sich der Gefäßradius verringern, damit sich der Strömungswiderstand verdoppelt?">
+  <Option erklaerung="Eine Halbierung des Radius würde den Widerstand um das Sechzehnfache erhöhen.">
+    Um 50 %
+  </Option>
+  <Option erklaerung="Bei 25 % Verengung stiege der Widerstand bereits auf etwa das Dreifache.">
+    Um 25 %
+  </Option>
+  <Option
+    richtig
+    erklaerung="Der Widerstand ist proportional zu r⁻⁴. Eine Verengung auf etwa 84 % des Radius, also um rund 16 %, verdoppelt ihn."
+  >
+    Um etwa 16 %
+  </Option>
+  <Option erklaerung="Bei 5 % Verengung steigt der Widerstand nur um etwa ein Viertel.">
+    Um 5 %
+  </Option>
+  <Option erklaerung="Der Zusammenhang ist nicht linear, sondern folgt der vierten Potenz.">
+    Um 100 %
+  </Option>
+</Frage>

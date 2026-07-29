@@ -5,3 +5,4 @@ dist/
 coverage/
 package-lock.json
 *.tsbuildinfo
+apps/web/next-env.d.ts

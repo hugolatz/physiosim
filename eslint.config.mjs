@@ -46,4 +46,11 @@ export default tseslint.config(
     files: ['**/*.config.{js,mjs,ts}', '**/*.test.ts'],
     rules: { '@typescript-eslint/no-explicit-any': 'off' },
   },
+  {
+    // Build scripts run in Node, not in the browser.
+    files: ['**/scripts/*.mjs'],
+    languageOptions: {
+      globals: { process: 'readonly', console: 'readonly' },
+    },
+  },
 );

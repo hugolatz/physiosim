@@ -29,6 +29,23 @@ export interface CardiovascularState extends State {
   autoregulationFactor: number;
   systolicMmHg: number;
   diastolicMmHg: number;
+  /** The individual contributions this step used, for the causal explanation. */
+  factors: CardiovascularFactors;
+}
+
+/** 1 means "this influence is currently doing nothing". */
+export interface CardiovascularFactors {
+  tprSympathetic: number;
+  tprAngiotensin: number;
+  tprAnp: number;
+  tprAutoregulation: number;
+  tprVascularTone: number;
+  tprCalciumAntagonist: number;
+  contractilitySympathetic: number;
+  contractilityDisease: number;
+  afterload: number;
+  hrSympathetic: number;
+  venousTone: number;
 }
 
 export const cardiovascularParams: readonly ParamDefinition[] = [
@@ -154,6 +171,19 @@ export const cardiovascularSystem: SystemModel<CardiovascularState> = {
       autoregulationFactor: 1,
       systolicMmHg: 120,
       diastolicMmHg: 80,
+      factors: {
+        tprSympathetic: 1,
+        tprAngiotensin: 1,
+        tprAnp: 1,
+        tprAutoregulation: 1,
+        tprVascularTone: 1,
+        tprCalciumAntagonist: 1,
+        contractilitySympathetic: 1,
+        contractilityDisease: 1,
+        afterload: 1,
+        hrSympathetic: 1,
+        venousTone: 1,
+      },
     };
   },
 
@@ -202,11 +232,13 @@ export const cardiovascularSystem: SystemModel<CardiovascularState> = {
       (meanSystemicFillingPressureMmHg + C.EDV_HALF_MMHG);
 
     // --- contraction --------------------------------------------------------
+    const contractilityDisease = 1 - 0.7 * (param(p, 'heartFailure') / 100);
+    const contractilitySympathetic = 1 + C.CONTRACTILITY_SYMPATHETIC_GAIN * toneDelta * beta1;
     const contractility = clamp(
       param(p, 'contractility') *
-        (1 - 0.7 * (param(p, 'heartFailure') / 100)) *
+        contractilityDisease *
         mod['contractility.intrinsic'] *
-        (1 + C.CONTRACTILITY_SYMPATHETIC_GAIN * toneDelta * beta1),
+        contractilitySympathetic,
       0.1,
       2.5,
     );
@@ -223,8 +255,9 @@ export const cardiovascularSystem: SystemModel<CardiovascularState> = {
     );
     const strokeVolumeMl = endDiastolicVolumeMl * ejectionFraction;
 
+    const hrSympathetic = 1 + C.HR_SYMPATHETIC_GAIN * toneDelta * beta1;
     const heartRateBpm = clamp(
-      C.HEART_RATE_BPM * (1 + C.HR_SYMPATHETIC_GAIN * toneDelta * beta1),
+      C.HEART_RATE_BPM * hrSympathetic,
       C.HEART_RATE_MIN_BPM,
       C.HEART_RATE_MAX_BPM,
     );
@@ -246,16 +279,19 @@ export const cardiovascularSystem: SystemModel<CardiovascularState> = {
       dt,
     );
 
+    const tprSympathetic = 1 + C.TPR_SYMPATHETIC_GAIN * toneDelta;
+    const tprAngiotensin = respond(
+      s.angiotensinIiEffect,
+      s.angiotensinIiEffect >= 1 ? C.TPR_ANGIOTENSIN_GAIN : C.TPR_ANGIOTENSIN_GAIN_LOW,
+    );
+    const tprAnp = 1 - C.TPR_ANP_GAIN * (s.anpRelative - 1);
     const tprMmHgMinPerL = clamp(
       C.TPR_MMHG_MIN_PER_L *
         autoregulationFactor *
         param(p, 'vascularTone') *
-        (1 + C.TPR_SYMPATHETIC_GAIN * toneDelta) *
-        respond(
-          s.angiotensinIiEffect,
-          s.angiotensinIiEffect >= 1 ? C.TPR_ANGIOTENSIN_GAIN : C.TPR_ANGIOTENSIN_GAIN_LOW,
-        ) *
-        (1 - C.TPR_ANP_GAIN * (s.anpRelative - 1)) *
+        tprSympathetic *
+        tprAngiotensin *
+        tprAnp *
         mod['vsmc.calciumChannel'],
       4,
       60,
@@ -290,6 +326,19 @@ export const cardiovascularSystem: SystemModel<CardiovascularState> = {
       autoregulationFactor,
       systolicMmHg,
       diastolicMmHg,
+      factors: {
+        tprSympathetic,
+        tprAngiotensin,
+        tprAnp,
+        tprAutoregulation: autoregulationFactor,
+        tprVascularTone: param(p, 'vascularTone'),
+        tprCalciumAntagonist: mod['vsmc.calciumChannel'],
+        contractilitySympathetic,
+        contractilityDisease,
+        afterload: afterloadFactor,
+        hrSympathetic,
+        venousTone: 1 - (C.VENOUS_TONE_GAIN_L * toneDelta) / C.UNSTRESSED_VOLUME_L,
+      },
     };
   },
 
