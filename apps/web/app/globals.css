@@ -22,3 +22,126 @@ body {
   outline: 2px solid var(--color-signal);
   outline-offset: 2px;
 }
+
+/* ---------------------------------------------------------------------------
+   Animations.
+
+   Every duration below is supplied by the component as a CSS custom property
+   computed from a model quantity (see lib/visuals.ts). Nothing here has a
+   hard-coded speed, because nothing on screen is allowed to move for reasons
+   the simulation cannot account for.
+
+   The animations run in wall-clock time even under time-lapse: they depict a
+   *rate* (beats per minute, drops per minute), not a count of elapsed events.
+   --------------------------------------------------------------------------- */
+
+/* Ventricular contraction. Systole is quick, diastole takes the rest of the cycle. */
+@keyframes physio-beat {
+  0% {
+    transform: scale(1);
+  }
+  9% {
+    transform: scale(var(--beat-peak, 1.08));
+  }
+  34% {
+    transform: scale(0.99);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Blood moving along a vessel: the dash pattern travels at the flow's speed. */
+@keyframes physio-flow {
+  to {
+    stroke-dashoffset: var(--flow-shift, -32);
+  }
+}
+
+/* A drop of urine leaving the collecting system. */
+@keyframes physio-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  12% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(var(--drop-distance, 26px));
+  }
+}
+
+/* Filtrate crossing the glomerular barrier, in the mechanism view. */
+@keyframes physio-filter {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  20% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--filter-dx, 0), var(--filter-dy, 18px));
+  }
+}
+
+.physio-beat {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: physio-beat var(--beat-seconds, 0.86s) ease-out infinite;
+}
+
+.physio-flow {
+  animation: physio-flow var(--flow-seconds, 1.6s) linear infinite;
+}
+
+.physio-drop {
+  transform-box: fill-box;
+  animation: physio-drop var(--drop-seconds, 1.2s) ease-in infinite;
+  animation-delay: var(--drop-delay, 0s);
+}
+
+.physio-filter {
+  transform-box: fill-box;
+  animation: physio-filter var(--filter-seconds, 1s) linear infinite;
+  animation-delay: var(--filter-delay, 0s);
+}
+
+/* Value-driven geometry settles over ~300 ms so a change reads as cause and effect
+   rather than as a jump cut. */
+.physio-settle {
+  transition:
+    stroke-width var(--duration-settle) var(--ease-settle),
+    fill var(--duration-settle) var(--ease-settle),
+    fill-opacity var(--duration-settle) var(--ease-settle),
+    stroke var(--duration-settle) var(--ease-settle),
+    opacity var(--duration-settle) var(--ease-settle),
+    r var(--duration-settle) var(--ease-settle),
+    y var(--duration-settle) var(--ease-settle),
+    height var(--duration-settle) var(--ease-settle),
+    transform var(--duration-settle) var(--ease-settle);
+}
+
+/* Abschnitt 8 der Vorgabe: bei prefers-reduced-motion keine Bewegung, sondern Zahlen
+   und Balken. Die Zahlen stehen ohnehin immer daneben — hier hört die Bewegung auf. */
+@media (prefers-reduced-motion: reduce) {
+  .physio-beat,
+  .physio-flow,
+  .physio-drop,
+  .physio-filter {
+    animation: none;
+  }
+  .physio-drop,
+  .physio-filter {
+    opacity: 0.85;
+  }
+  .physio-settle {
+    transition: none;
+  }
+}

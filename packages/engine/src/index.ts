@@ -20,7 +20,7 @@ export type { PathologyDefinition } from './interventions/pathologies';
 export { balanceSystem } from './systems/balance';
 export { cardiovascularSystem } from './systems/cardiovascular';
 export { endocrineSystem } from './systems/endocrine-raas';
-export { renalSystem } from './systems/renal';
+export { renalSystem, renalConstants } from './systems/renal';
 export type { BalanceState } from './systems/balance';
 export type { CardiovascularState } from './systems/cardiovascular';
 export type { EndocrineState } from './systems/endocrine-raas';

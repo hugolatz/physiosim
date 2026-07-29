@@ -16,6 +16,14 @@ export interface Scenario {
   /** What should happen, in words — the same statement the test checks numerically. */
   readonly expectation: string;
   readonly params: Readonly<Record<string, number>>;
+  /**
+   * Optional starting point. The scenario is run from here first, so the student sees the
+   * state *before* the intervention — an ACE inhibitor given to a body that has not yet
+   * equilibrated behind its stenosis teaches nothing.
+   */
+  readonly baseline?: Readonly<Record<string, number>>;
+  /** How long to run the baseline before `params` is applied. */
+  readonly settleBeforeSeconds?: number;
   readonly settleSeconds: number;
   /** Readouts the interface should put in front first. */
   readonly focus: readonly string[];
@@ -32,6 +40,8 @@ export const SCENARIOS: readonly Scenario[] = [
       'Urin-Na⁺ ↓↓, Filtrationsfraktion ↑.',
     // 100 mL/min over 10 min = 1000 mL. The test stops the bleed afterwards.
     params: { hemorrhageRate: 100 },
+    baseline: {},
+    settleBeforeSeconds: 12 * HOUR,
     settleSeconds: 10 * MINUTE,
     focus: ['map', 'heartRate', 'tpr', 'plasmaReninActivity', 'urineFlow', 'urineSodium'],
     contentId: 'hypovolaemie',
@@ -68,10 +78,14 @@ export const SCENARIOS: readonly Scenario[] = [
       'Die GFR fällt deutlich ab: ohne Angiotensin II dilatiert das Vas efferens, ' +
       'der glomeruläre Kapillardruck bricht weg.',
     params: {
-      renalArteryStenosisLeft: 30,
-      renalArteryStenosisRight: 30,
+      renalArteryStenosisLeft: 40,
+      renalArteryStenosisRight: 40,
       aceInhibitor: 100,
     },
+    // First let the stenosis settle, then give the drug — otherwise the collapse of the
+    // GFR cannot be told apart from the stenosis itself.
+    baseline: { renalArteryStenosisLeft: 40, renalArteryStenosisRight: 40 },
+    settleBeforeSeconds: 3 * DAY,
     settleSeconds: 2 * HOUR,
     focus: ['gfr', 'pgc-left', 'angiotensinIIEffect', 'filtrationFraction'],
     contentId: 'ace-hemmer',
@@ -92,6 +106,8 @@ export const SCENARIOS: readonly Scenario[] = [
     task: 'Was passiert mit Urin, Volumen, Renin und Kalium?',
     expectation: 'Urin ↑↑, Volumen ↓, Renin ↑ reaktiv, Kalium ↓.',
     params: { loopDiuretic: 100 },
+    baseline: {},
+    settleBeforeSeconds: DAY,
     settleSeconds: 2 * DAY,
     focus: ['urineFlow', 'ecfVolume', 'plasmaReninActivity', 'plasmaPotassium'],
     contentId: 'schleifendiuretikum',
@@ -104,6 +120,8 @@ export const SCENARIOS: readonly Scenario[] = [
       'Die GFR bricht ein: das Vas afferens kann nicht mehr dilatieren, das Vas efferens ' +
       'nicht mehr konstringieren, und das Volumen fehlt.',
     params: { nsaid: 100, aceInhibitor: 100, loopDiuretic: 100 },
+    baseline: {},
+    settleBeforeSeconds: 2 * DAY,
     settleSeconds: 2 * DAY,
     focus: ['gfr', 'pgc-left', 'rbf', 'ecfVolume'],
     contentId: 'nsar',
@@ -125,7 +143,9 @@ export const SCENARIOS: readonly Scenario[] = [
     expectation:
       'Sekunden: der Barorezeptorreflex fängt ab. Tage: die Druck-Natriurese bringt das ' +
       'System zum Ausgangsdruck zurück.',
-    params: { sympatheticBaseline: 1.35 },
+    params: { vascularTone: 1.35 },
+    baseline: {},
+    settleBeforeSeconds: 12 * HOUR,
     settleSeconds: 14 * DAY,
     focus: ['map', 'sympatheticTone', 'sodiumExcretion', 'ecfVolume'],
     contentId: 'druck-natriurese',

@@ -12,8 +12,19 @@ ganze Körper reagiert: Animation, Messwerte, Kurven und Erklärtext stammen all
 
 ## Stand
 
-Meilenstein M0 (Fundament) und M1 (Simulationskern). Die Oberfläche ist bis M2 bewusst
-schlicht: eine Debug-Seite mit Reglern und Zahlen. Erst kommt das Modell, dann die Optik.
+Meilenstein M0 (Fundament), M1 (Simulationskern) und M2 (Visualisierung).
+
+Die Startseite ist der Simulator: eine lebende Ganzkörperansicht, in der das Herz mit der
+berechneten Frequenz schlägt, die Gefäßweite dem Widerstand folgt, die Nieren ihre eigene
+Durchblutung tragen und Tropfen im Takt des Urinflusses fallen. Herz und Nieren sind
+anklickbar und führen eine Ebene tiefer — beim Nephron mit getrennt dargestellten
+Arteriolen, Filtrationsdrücken und segmentweisen Rückresorptionspfeilen.
+
+**Grundregel der Darstellung:** jede Animationseigenschaft wird in
+`apps/web/lib/visuals.ts` aus einer Modellgröße berechnet. Nichts bewegt sich aus
+dekorativen Gründen. Wo das Modell eine Größe nicht kennt — etwa die Durchblutung einzelner
+Extremitäten — bekommt sie auch keinen eigenen Bildkanal, sondern teilt sich einen
+gemeinsamen Index, und die Bildunterschrift sagt das.
 
 ## Schnellstart
 
@@ -22,8 +33,8 @@ npm install
 npm run dev
 ```
 
-Die App läuft dann auf http://localhost:3000, die Debug-Oberfläche des Simulationskerns
-unter http://localhost:3000/debug.
+Die App läuft dann auf http://localhost:3000. Unter http://localhost:3000/debug liegt
+zusätzlich die vollständige Wertetabelle des Simulationskerns.
 
 ## Werkzeuge
 
@@ -40,6 +51,9 @@ unter http://localhost:3000/debug.
 
 ```
 apps/web           Next.js-Oberfläche (App Router, TypeScript strict)
+  components/body    Ganzkörperansicht
+  components/organs  Nephron- und Herzdetail
+  lib/visuals.ts     Zuordnung Modellgröße → Bildeigenschaft
 packages/engine    Simulationskern — reines TypeScript, keine React-Abhängigkeit
 packages/ui        geteilte Design-Tokens und Primitives
 docs/model         Gleichungen, Konstanten, Quellen, Validierungsverhalten
